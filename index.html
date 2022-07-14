@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+
+<!-- Includes snippets from https://surma.dev/things/c-to-webassembly/ and https://developer.mozilla.org/en-US/docs/WebAssembly/Using_the_JavaScript_API -->
+
+<script type="module">
+  async function init() {
+    const memory = new WebAssembly.Memory({ initial: 10, maximum: 100 }); // 64KiB units, maximum is optional
+    memory.grow(1); // __builtin_wasm_memory_size(0) and __builtin_wasm_memory_grow(0, blocks) can now be used instead from C
+
+    const { instance } = await WebAssembly.instantiateStreaming(
+      fetch("./add.wasm"), {
+        env: { memory },
+        imports: { imported_func: arg => console.log(arg) }
+      }
+    );
+
+    const jsArray = [1, 2, 3, 4, 5];
+    // Allocate memory for 5 32-bit integers
+    // and return get starting address.
+    const cArrayPointer = instance.exports.malloc(jsArray.length * 4);
+    // Turn that sequence of 32-bit integers
+    // into a Uint32Array, starting at that address.
+    const cArray = new Uint32Array(
+      memory.buffer,
+      cArrayPointer,
+      jsArray.length
+    );
+    // Copy the values from JS to C.
+    cArray.set(jsArray);
+    // Run the function, passing the starting address and length.
+    console.log(instance.exports.sum(cArrayPointer, cArray.length));
+    instance.exports.add(3, 4);
+  }
+  init();
+</script>
