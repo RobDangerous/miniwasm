@@ -16,7 +16,6 @@ onmessage = function(e) {
   };
 
   WebAssembly.instantiate(mod, importObject).then((instance) => {
-    //instance.exports[func]();
-    instance.exports['thread_start']();
+    instance.exports[func]();
   });
 };
