@@ -23,8 +23,9 @@
   async function start_audio_thread() {
     const audioContext = new AudioContext();
     await audioContext.audioWorklet.addModule('audio-thread.js');
-    const randomNoiseNode = new AudioWorkletNode(audioContext, 'audio-thread');
-    randomNoiseNode.connect(audioContext.destination);
+    const audioThreadNode = new AudioWorkletNode(audioContext, 'audio-thread');
+    audioThreadNode.port.postMessage({ mod, memory });
+    audioThreadNode.connect(audioContext.destination);
   }
 
   async function init() {
@@ -43,6 +44,8 @@
     mod = result.module;
     instance = result.instance;
 
+    instance.exports._start();
+
     const kanvas = document.getElementById('kanvas');
     const context = kanvas.getContext('2d');
     const grd = context.createRadialGradient(75, 50, 5, 90, 60, 100);
@@ -53,25 +56,6 @@
     kanvas.addEventListener('click', (event) => {
       start_audio_thread();
     });
-
-    instance.exports._start();
-
-    /*const jsArray = [1, 2, 3, 4, 5];
-    // Allocate memory for 5 32-bit integers
-    // and return get starting address.
-    const cArrayPointer = instance.exports.malloc(jsArray.length * 4);
-    // Turn that sequence of 32-bit integers
-    // into a Uint32Array, starting at that address.
-    const cArray = new Uint32Array(
-      memory.buffer,
-      cArrayPointer,
-      jsArray.length
-    );
-    // Copy the values from JS to C.
-    cArray.set(jsArray);
-    // Run the function, passing the starting address and length.
-    console.log(instance.exports.sum(cArrayPointer, cArray.length));
-    instance.exports.add(3, 4);*/
   }
   init();
 </script>

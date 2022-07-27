@@ -48,6 +48,48 @@ __attribute__((export_name("sum"))) int sum(int a[], int len) {
   return sum;
 }
 
+// MT19937
+
+static int MT[624];
+static int mermeme_index = 0;
+
+static void generateNumbers() {
+  for (int i = 0; i < 624; ++i) {
+    int y = (MT[i] & 1) + (MT[(i + 1) % 624]) & 0x7fffffff;
+    MT[i] = MT[(i + 397) % 624] ^ (y >> 1);
+    if ((y % 2) != 0) MT[i] = MT[i] ^ 0x9908b0df;
+  }
+}
+
+void kinc_random_init(int seed) {
+  MT[0] = seed;
+  for (int i = 1; i < 624; ++i) MT[i] = 0x6c078965 * (MT[i - 1] ^ (MT[i - 1] >> 30)) + i;
+}
+
+int kinc_random_get() {
+  if (mermeme_index == 0) generateNumbers();
+
+  int y = MT[mermeme_index];
+  y = y ^ (y >> 11);
+  y = y ^ ((y << 7) & (0x9d2c5680));
+  y = y ^ ((y << 15) & (0xefc60000));
+  y = y ^ (y >> 18);
+
+  mermeme_index = (mermeme_index + 1) % 624;
+  return y;
+}
+
+int kinc_random_get_max(int max) {
+  return kinc_random_get() % (max + 1);
+}
+
+__attribute__((export_name("audio_func"))) void audio_func(float *data, int length) {
+  loggy(888);
+  for (int i = 0; i < length; ++i) {
+    data[i] = (kinc_random_get_max(255) / 255.0f) * 2.0f - 1.0f;
+  }
+}
+
 int data[16];
 
 __attribute__((export_name("thread_start"))) void thread_start(void) {
@@ -64,5 +106,6 @@ __attribute__((export_name("_start"))) void _start(void) {
   for (int i = 0; i < 16; ++i) {
     data[i] = i;
   }
+  kinc_random_init(0);
   create_thread("thread_start");
 }
