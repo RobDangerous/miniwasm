@@ -8,6 +8,7 @@
   let instance = null;
 
   function create_thread(func) {
+    console.log('Creating thread');
     const thread_starter = new Worker('thread_starter.js');
     const arr = new Uint8Array(memory.buffer, func, 256);
     let str = '';

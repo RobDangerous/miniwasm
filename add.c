@@ -48,14 +48,21 @@ __attribute__((export_name("sum"))) int sum(int a[], int len) {
   return sum;
 }
 
+int data[16];
+
 __attribute__((export_name("thread_start"))) void thread_start(void) {
-  for (;;) {
-    loggy(3);
+  loggy(666);
+  for (int i = 0; i < 16; ++i) {
+    loggy(data[i]);
   }
 }
 
 // This is what clang wants when we do not use --no-entry
 // but it doesn't seem to matter otherwise
 __attribute__((export_name("_start"))) void _start(void) {
+  loggy(777);
+  for (int i = 0; i < 16; ++i) {
+    data[i] = i;
+  }
   create_thread("thread_start");
 }
