@@ -2,6 +2,8 @@
 
 <!-- Includes snippets from https://surma.dev/things/c-to-webassembly/ and https://developer.mozilla.org/en-US/docs/WebAssembly/Using_the_JavaScript_API -->
 
+<body>
+  <canvas id="kanvas" width="800" height="600"></canvas>
 <script type="module">
   let memory = null;
   let mod = null;
@@ -16,6 +18,13 @@
       str += String.fromCharCode(arr[i]);
     }
     thread_starter.postMessage({ mod, memory, func: str });
+  }
+
+  async function start_audio_thread() {
+    const audioContext = new AudioContext();
+    await audioContext.audioWorklet.addModule('audio-thread.js');
+    const randomNoiseNode = new AudioWorkletNode(audioContext, 'audio-thread');
+    randomNoiseNode.connect(audioContext.destination);
   }
 
   async function init() {
@@ -33,6 +42,17 @@
 
     mod = result.module;
     instance = result.instance;
+
+    const kanvas = document.getElementById('kanvas');
+    const context = kanvas.getContext('2d');
+    const grd = context.createRadialGradient(75, 50, 5, 90, 60, 100);
+    grd.addColorStop(0, 'red');
+    grd.addColorStop(1, 'white');
+    context.fillStyle = grd;
+    context.fillRect(10, 10, 150, 80);
+    kanvas.addEventListener('click', (event) => {
+      start_audio_thread();
+    });
 
     instance.exports._start();
 
@@ -55,3 +75,4 @@
   }
   init();
 </script>
+</body>
