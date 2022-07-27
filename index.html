@@ -3,18 +3,35 @@
 <!-- Includes snippets from https://surma.dev/things/c-to-webassembly/ and https://developer.mozilla.org/en-US/docs/WebAssembly/Using_the_JavaScript_API -->
 
 <script type="module">
+  let memory = null;
+  let mod = null;
+  let instance = null;
+
+  function create_thread(func) {
+    const thread_starter = new Worker('thread_starter.js');
+    thread_starter.postMessage({ mod, memory, func });
+  }
+
   async function init() {
-    const memory = new WebAssembly.Memory({ initial: 10, maximum: 100 }); // 64KiB units, maximum is optional
+    memory = new WebAssembly.Memory({ initial: 10, maximum: 100, shared: true }); // 64KiB units, maximum is optional
     memory.grow(1); // __builtin_wasm_memory_size(0) and __builtin_wasm_memory_grow(0, blocks) can now be used instead from C
 
-    const { instance } = await WebAssembly.instantiateStreaming(
+    const result = await WebAssembly.instantiateStreaming(
       fetch("./add.wasm"), {
         env: { memory },
-        imports: { imported_func: arg => console.log(arg) }
+        imports: {
+          imported_func: arg => console.log(arg),
+          create_thread
+        }
       }
     );
 
-    const jsArray = [1, 2, 3, 4, 5];
+    mod = result.module;
+    instance = result.instance;
+
+    instance.exports._start();
+
+    /*const jsArray = [1, 2, 3, 4, 5];
     // Allocate memory for 5 32-bit integers
     // and return get starting address.
     const cArrayPointer = instance.exports.malloc(jsArray.length * 4);
@@ -29,7 +46,7 @@
     cArray.set(jsArray);
     // Run the function, passing the starting address and length.
     console.log(instance.exports.sum(cArrayPointer, cArray.length));
-    instance.exports.add(3, 4);
+    instance.exports.add(3, 4);*/
   }
   init();
 </script>

@@ -1,4 +1,4 @@
-// clang --target=wasm32 -nostdlib "-Wl,--import-memory" -o add.wasm add.c
+// clang --target=wasm32 -nostdlib -matomics -mbulk-memory "-Wl,--shared-memory" -o add.wasm add.c
 
 // includes snippets from https://surma.dev/things/c-to-webassembly/
 
@@ -17,6 +17,7 @@ __attribute__((export_name("free"))) void free(void* p) {
 }
 
 __attribute__((import_module("imports"), import_name("imported_func"))) void loggy(int value);
+__attribute__((import_module("imports"), import_name("create_thread"))) void create_thread(const char* func);
 
 // function pointers supposedly need a wasm-table
 // but from what I figured this func-pointer gets optimized
@@ -47,8 +48,14 @@ __attribute__((export_name("sum"))) int sum(int a[], int len) {
   return sum;
 }
 
+__attribute__((export_name("thread_start"))) void thread_start(void) {
+  for (;;) {
+    loggy(3);
+  }
+}
+
 // This is what clang wants when we do not use --no-entry
 // but it doesn't seem to matter otherwise
 __attribute__((export_name("_start"))) void _start(void) {
-  
+  create_thread("thread_start");
 }

@@ -52,6 +52,9 @@ http.createServer(function (request, response) {
 		// to the API (e.g. in case you use sessions)
 		response.setHeader('Access-Control-Allow-Credentials', true);
 
+        response.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+        response.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+
         if (error) {
             if (error.code == 'ENOENT'){
                 fs.readFile('./404.html', function(error, content) {
