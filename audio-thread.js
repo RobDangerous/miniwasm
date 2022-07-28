@@ -9,6 +9,11 @@ class AudioThread extends AudioWorkletProcessor {
     super(...args);
 
     const self = this;
+
+    this.port.onmessageerror = (e) => {
+      console.error('Error', e);
+    };
+
     this.port.onmessage = (e) => {
       console.log('Audio onmessage');
 
