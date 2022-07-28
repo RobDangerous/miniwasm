@@ -15,7 +15,7 @@ onmessage = async function(e) {
   const importObject = {
     env: { memory },
     imports: {
-      imported_func: arg => console.log('thread: ' + arg),
+      imported_func: arg => {},//console.log('thread: ' + arg),
       create_thread
     }
   };
