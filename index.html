@@ -8,24 +8,41 @@
   let memory = null;
   let mod = null;
   let instance = null;
-
-  function create_thread(func) {
-    console.log('Creating thread');
-    const thread_starter = new Worker('thread_starter.js');
-    const arr = new Uint8Array(memory.buffer, func, 256);
-    let str = '';
-    for (let i = 0; arr[i] != 0; ++i) {
-      str += String.fromCharCode(arr[i]);
-    }
-    thread_starter.postMessage({ mod, memory, func: str });
-  }
-
+  let offscreen = null;
+  
   async function start_audio_thread() {
     const audioContext = new AudioContext();
     await audioContext.audioWorklet.addModule('audio-thread.js');
     const audioThreadNode = new AudioWorkletNode(audioContext, 'audio-thread');
     audioThreadNode.port.postMessage({ mod, memory });
     audioThreadNode.connect(audioContext.destination);
+  }
+
+  function create_thread(func) {
+    console.log('Creating thread');
+
+    if (!offscreen) {
+      const kanvas = document.getElementById('kanvas');
+      offscreen = kanvas.transferControlToOffscreen();
+
+      let audio_thread_started = false;
+      kanvas.addEventListener('click', (event) => {
+        if (!audio_thread_started) {
+          start_audio_thread();
+          audio_thread_started = true;
+        }
+      });
+    }
+
+    const thread_starter = new Worker('thread_starter.js');
+    
+    const arr = new Uint8Array(memory.buffer, func, 256);
+    let str = '';
+    for (let i = 0; arr[i] != 0; ++i) {
+      str += String.fromCharCode(arr[i]);
+    }
+
+    thread_starter.postMessage({ mod, memory, func: str, canvas: offscreen }, [offscreen]);
   }
 
   async function init() {
@@ -46,7 +63,7 @@
 
     instance.exports._start();
 
-    const kanvas = document.getElementById('kanvas');
+    /*const kanvas = document.getElementById('kanvas');
     const context = kanvas.getContext('2d');
     const grd = context.createRadialGradient(75, 50, 5, 90, 60, 100);
     grd.addColorStop(0, 'red');
@@ -55,7 +72,7 @@
     context.fillRect(10, 10, 150, 80);
     kanvas.addEventListener('click', (event) => {
       start_audio_thread();
-    });
+    });*/
   }
   init();
 </script>
